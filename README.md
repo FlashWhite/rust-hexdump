@@ -24,7 +24,7 @@ Only a primitive set of options from `hexdump` are are provided, in particular:
     decimal, per line.
 ```
 
-An example output for the results:
+Example Usage:
 ```bash
 ❯ cargo run -- -n 42 -f examples/html.txt
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
@@ -35,4 +35,5 @@ An example output for the results:
 000002a
 ```
 
-The functionality of this tool is meant to mimic [`hexdump`](https://www.man7.org/linux/man-pages/man1/hexdump.1.html). Hence, many of the options and their explanations are taken directly from the manpage.
+## Credits
+The functionality of this tool is meant to mimic [`hexdump`](https://www.man7.org/linux/man-pages/man1/hexdump.1.html). Hence, many of the options and their explanations are taken directly from the manpage. In addition, `examples/bee_movie.txt` is a copy-paste the "Bee Movie (2007)" script. All credits go to the screenwriters.

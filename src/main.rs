@@ -1,6 +1,6 @@
 use std::fs;
+use std::cmp::min;
 use clap::Parser;
-// use clap::ValueEnum;
 
 #[derive(Parser, Debug)]
 #[command(name = "rust-hexdump: hexdump command written in Rust")]
@@ -22,33 +22,22 @@ fn main() {
         // DETERMINE LENGTH
         let length: usize;
         if let Some(n) = args.length {
-            length = n;
+            length = min(n, bytes.len());
         } else {
             length = bytes.len();
         }
 
         // PRINT WORK
-        let mut idx: usize = 0;
-        while idx < length {
-            print!("{:07x} ", idx);
-            if 8 <= (length-idx)/2 { 
-                for _ in 0..8 {
-                    print!("{:x}{:x} ", bytes[idx+1], bytes[idx]);
-                    idx += 2;
-                }
-            } else { // last line to be printed
-                while idx+1 < length {
-                    print!("{:x}{:x} ", bytes[idx+1], bytes[idx]);
-                    idx += 2;
-                }
-                if idx != length { // deal with leftover odd
-                    print!("00{:x}", bytes[idx]);
-                    idx += 1;
-                }
+        // let mut idx: usize = 0;
+        let mut two_byte_hexadecimal = TwoByteHexadecimal::new(length, &bytes);
+        loop {
+            if let Some(line) = two_byte_hexadecimal.next() {
+                println!("{line}");
+            } else {
+                println!("{:07x}", two_byte_hexadecimal.idx);
+                break;
             }
-            println!();
         }
-        println!("{:07x}", idx);
     } else {
         eprintln!("Failed to read file {}.", args.file);
     }
@@ -56,6 +45,43 @@ fn main() {
 
 // TODO: Create helper functions that return strings of formatted decimal, octal, and ascii respectively
 // Create unit tests for each of the helper functions...
+struct TwoByteHexadecimal<'a> {
+    idx: usize,
+    length: usize,
+    bytes: &'a Vec<u8>,
+}
+
+impl<'a> TwoByteHexadecimal<'a> {
+    fn new(length: usize, bytes: &'a Vec<u8>) -> Self {
+        TwoByteHexadecimal {idx: 0, length, bytes}
+    }
+}
+
+impl<'a> Iterator for TwoByteHexadecimal<'a> {
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx == self.length { // nothing left to print
+            return None
+        }
+        let mut out: String = format!("{:07x} ", self.idx);
+        if 8 <= (self.length-self.idx)/2 { 
+            for _ in 0..8 {
+                out.push_str(&format!("{:x}{:x} ", self.bytes[self.idx+1], self.bytes[self.idx]));
+                self.idx += 2;
+            }
+        } else { // last line to be printed
+            while self.idx+1 < self.length {
+                out.push_str(&format!("{:x}{:x} ", self.bytes[self.idx+1], self.bytes[self.idx]));
+                self.idx += 2;
+            }
+            if self.idx != self.length { // deal with leftover odd
+                out.push_str(&format!("00{:x}", self.bytes[self.idx]));
+                self.idx += 1;
+            }
+        }
+        Some(out)
+    }
+}
 
 // How to deal with multi arg printing? Ex: 
 // ➜ hexdump -n 32 -b -c html.txt
