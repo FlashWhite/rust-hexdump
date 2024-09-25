@@ -17,14 +17,19 @@ pub struct Args {
 
     /// Print Two-Byte Hexadecimal
     #[arg(short = 'x', long = "two-bytes-hex", action = clap::ArgAction::Count)]
-    pub hexadecimal: u8,
+    pub x: u8,
 
     /// Print Two-Byte Decimal
     #[arg(short = 'd', long = "two-bytes-decimal", action = clap::ArgAction::Count)]
-    pub decimal: u8,
+    pub d: u8,
 
-    // -b, --one-byte-octal
-    // -c, --one-byte-char
+    /// Print One-Byte Octal
+    #[arg(short = 'b', long = "one-byte-octal", action = clap::ArgAction::Count)]
+    pub b: u8,
+
+    /// Print One-Byte Char (ascii)
+    #[arg(short = 'c', long = "one-byte-char", action = clap::ArgAction::Count)]
+    pub c: u8,
 }
 
 fn main() {
@@ -49,6 +54,8 @@ fn main() {
             match arg.as_str() {
                 "-x" | "--two-bytes-hex" => iterators.push(Box::new(TwoByteHexadecimal::new(length, &bytes))),
                 "-d" | "--two-bytes-decimal" => iterators.push(Box::new(TwoByteDecimal::new(length, &bytes))),
+                "-b" | "--one-byte-octal" => iterators.push(Box::new(OneByteOctal::new(length, &bytes))),
+                "-c" | "--one-byte-char" => iterators.push(Box::new(OneByteChar::new(length, &bytes))), 
                 _ => {},
             }
         }
@@ -194,7 +201,61 @@ impl<'a> Iterator for TwoByteDecimal<'a> {
     }
 }
 
-// TODO: Add tests for each struct
+
+struct OneByteOctal<'a> {
+    idx: usize,
+    length: usize,
+    bytes: &'a Vec<u8>,
+}
+
+impl<'a> OneByteOctal<'a> {
+    fn new(length: usize, bytes: &'a Vec<u8>) -> Self {
+        OneByteOctal {idx: 0, length, bytes}
+    }
+}
+
+impl<'a> Iterator for OneByteOctal<'a> {
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx == self.length { // nothing left to print
+            return None
+        }
+        let mut out: String = format!("{:07x} ", self.idx);
+        for _ in 0..min(16, self.length-self.idx) {
+            out.push_str(&format!("{:03o} ", self.bytes[self.idx]));
+            self.idx += 1;
+        }
+        Some(out)
+    }
+}
+
+struct OneByteChar<'a> {
+    idx: usize,
+    length: usize,
+    bytes: &'a Vec<u8>,
+}
+
+impl<'a> OneByteChar<'a> {
+    fn new(length: usize, bytes: &'a Vec<u8>) -> Self {
+        OneByteChar {idx: 0, length, bytes}
+    }
+}
+
+impl<'a> Iterator for OneByteChar<'a> {
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx == self.length { // nothing left to print
+            return None
+        }
+        let mut out: String = format!("{:07x}   ", self.idx);
+        for _ in 0..min(16, self.length-self.idx) {
+            out.push_str(&format!("{}   ", self.bytes[self.idx] as char));
+            self.idx += 1;
+        }
+        Some(out)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -261,4 +322,47 @@ mod tests {
         assert_eq!(even_iterator.next().unwrap(), "0000010   25120   28257   28257   08289   25968   27749   08225   ".to_string());
         assert_eq!(even_iterator.next(), None);
     }
+
+    #[test]
+    fn test_one_byte_octal() {
+        let bytes: Vec<u8> = "orange juice and banana peel! apple juice and lemon rind!".as_bytes().to_vec();
+        // Multiple Lines, Odd Last Line
+        let mut mult_iterator = OneByteOctal::new(bytes.len(), &bytes);
+        assert_eq!(mult_iterator.next().unwrap(), "0000000 157 162 141 156 147 145 040 152 165 151 143 145 040 141 156 144 ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000010 040 142 141 156 141 156 141 040 160 145 145 154 041 040 141 160 ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000020 160 154 145 040 152 165 151 143 145 040 141 156 144 040 154 145 ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000030 155 157 156 040 162 151 156 144 041 ".to_string());
+        assert_eq!(mult_iterator.next(), None);
+        // Full Last Line
+        let mut full_iterator = OneByteOctal::new(16, &bytes);
+        assert_eq!(full_iterator.next().unwrap(), "0000000 157 162 141 156 147 145 040 152 165 151 143 145 040 141 156 144 ".to_string());
+        assert_eq!(full_iterator.next(), None);
+        // Even Last Line
+        let mut even_iterator = OneByteOctal::new(30, &bytes);
+        assert_eq!(even_iterator.next().unwrap(), "0000000 157 162 141 156 147 145 040 152 165 151 143 145 040 141 156 144 ".to_string());
+        assert_eq!(even_iterator.next().unwrap(), "0000010 040 142 141 156 141 156 141 040 160 145 145 154 041 040 ".to_string());
+        assert_eq!(even_iterator.next(), None);
+    }
+
+    #[test]
+    fn test_one_byte_char() {
+        let bytes: Vec<u8> = "orange juice and banana peel! apple juice and lemon rind!".as_bytes().to_vec();
+        // Multiple Lines, Odd Last Line
+        let mut mult_iterator = OneByteChar::new(bytes.len(), &bytes);
+        assert_eq!(mult_iterator.next().unwrap(), "0000000   o   r   a   n   g   e       j   u   i   c   e       a   n   d   ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000010       b   a   n   a   n   a       p   e   e   l   !       a   p   ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000020   p   l   e       j   u   i   c   e       a   n   d       l   e   ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000030   m   o   n       r   i   n   d   !   ".to_string());
+        assert_eq!(mult_iterator.next(), None);
+        // Full Last Line
+        let mut full_iterator = OneByteChar::new(16, &bytes);
+        assert_eq!(full_iterator.next().unwrap(), "0000000   o   r   a   n   g   e       j   u   i   c   e       a   n   d   ".to_string());
+        assert_eq!(full_iterator.next(), None);
+        // Even Last Line
+        let mut even_iterator = OneByteChar::new(30, &bytes);
+        assert_eq!(even_iterator.next().unwrap(), "0000000   o   r   a   n   g   e       j   u   i   c   e       a   n   d   ".to_string());
+        assert_eq!(even_iterator.next().unwrap(), "0000010       b   a   n   a   n   a       p   e   e   l   !       ".to_string());
+        assert_eq!(even_iterator.next(), None);
+    }
+
 }
