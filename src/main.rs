@@ -11,19 +11,44 @@ pub struct Args {
     #[arg(short, long, required = true)]
     pub file: String,
 
-    /// Toggle matching with numeric variables
+    /// Toggle length of file to print
     #[arg(short = 'n', long = "length")]
-    pub length: Option<u32>, // especially large positive integers will fail
+    pub length: Option<usize>, // especially large positive integers will fail
 }
 
 fn main() {
     let args = Args::parse();
     if let Ok(bytes) = fs::read(args.file.clone()) {
-        if let Some(length) = args.length {
-            println!("Printing {} from {}...", length, args.file);
+        // DETERMINE LENGTH
+        let length: usize;
+        if let Some(n) = args.length {
+            length = n;
         } else {
-            println!("Printing EVERYTHING from {}!", args.file);
+            length = bytes.len();
         }
+
+        // PRINT WORK
+        let mut idx: usize = 0;
+        while idx < length {
+            print!("{:07x} ", idx);
+            if 8 <= (length-idx)/2 { 
+                for _ in 0..8 {
+                    print!("{:x}{:x} ", bytes[idx+1], bytes[idx]);
+                    idx += 2;
+                }
+            } else { // last line to be printed
+                while idx+1 < length {
+                    print!("{:x}{:x} ", bytes[idx+1], bytes[idx]);
+                    idx += 2;
+                }
+                if idx != length { // deal with leftover odd
+                    print!("00{:x}", bytes[idx]);
+                    idx += 1;
+                }
+            }
+            println!();
+        }
+        println!("{:07x}", idx);
     } else {
         eprintln!("Failed to read file {}.", args.file);
     }
