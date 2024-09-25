@@ -65,6 +65,27 @@ mod tests {
     }
 
     #[test]
+    fn test_two_byte_octal() {
+        let bytes: Vec<u8> = "orange juice and banana peel! apple juice and lemon rind!".as_bytes().to_vec();
+        // Multiple Lines, Odd Last Line
+        let mut mult_iterator = TwoByteOctal::new(bytes.len(), &bytes);
+        assert_eq!(mult_iterator.next().unwrap(), "0000000  071157  067141  062547  065040  064565  062543  060440  062156  ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000010  061040  067141  067141  020141  062560  066145  020041  070141  ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000020  066160  020145  072552  061551  020145  067141  020144  062554  ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000030  067555  020156  064562  062156  000041  ".to_string());
+        assert_eq!(mult_iterator.next(), None);
+        // Full Last Line
+        let mut full_iterator = TwoByteOctal::new(16, &bytes);
+        assert_eq!(full_iterator.next().unwrap(), "0000000  071157  067141  062547  065040  064565  062543  060440  062156  ".to_string());
+        assert_eq!(full_iterator.next(), None);
+        // Even Last Line
+        let mut even_iterator = TwoByteOctal::new(30, &bytes);
+        assert_eq!(even_iterator.next().unwrap(), "0000000  071157  067141  062547  065040  064565  062543  060440  062156  ".to_string());
+        assert_eq!(even_iterator.next().unwrap(), "0000010  061040  067141  067141  020141  062560  066145  020041  ".to_string());
+        assert_eq!(even_iterator.next(), None);
+    }
+
+    #[test]
     fn test_one_byte_octal() {
         let bytes: Vec<u8> = "orange juice and banana peel! apple juice and lemon rind!".as_bytes().to_vec();
         // Multiple Lines, Odd Last Line

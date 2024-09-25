@@ -25,6 +25,10 @@ pub struct Args {
     #[arg(short = 'd', long = "two-bytes-decimal", action = clap::ArgAction::Count)]
     pub d: u8,
 
+    /// Print Two-Byte Octal
+    #[arg(short = 'o', long = "two-bytes-octal", action = clap::ArgAction::Count)]
+    pub o: u8,
+
     /// Print One-Byte Octal
     #[arg(short = 'b', long = "one-byte-octal", action = clap::ArgAction::Count)]
     pub b: u8,
@@ -56,6 +60,7 @@ fn main() {
             match arg.as_str() {
                 "-x" | "--two-bytes-hex" => iterators.push(Box::new(TwoByteHexadecimal::new(length, &bytes))),
                 "-d" | "--two-bytes-decimal" => iterators.push(Box::new(TwoByteDecimal::new(length, &bytes))),
+                "-o" | "--two-bytes-octal" => iterators.push(Box::new(TwoByteOctal::new(length, &bytes))),
                 "-b" | "--one-byte-octal" => iterators.push(Box::new(OneByteOctal::new(length, &bytes))),
                 "-c" | "--one-byte-char" => iterators.push(Box::new(OneByteChar::new(length, &bytes))), 
                 _ => {},

@@ -121,6 +121,45 @@ impl<'a> Iterator for TwoByteDecimal<'a> {
 }
 
 
+pub struct TwoByteOctal<'a> {
+    idx: usize,
+    length: usize,
+    bytes: &'a Vec<u8>,
+}
+
+impl<'a> TwoByteOctal<'a> {
+    pub fn new(length: usize, bytes: &'a Vec<u8>) -> Self {
+        TwoByteOctal {idx: 0, length, bytes}
+    }
+}
+
+impl<'a> Iterator for TwoByteOctal<'a> {
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx == self.length { // nothing left to print
+            return None
+        }
+        let mut out: String = format!("{:07x}  ", self.idx);
+        if 8 <= (self.length-self.idx)/2 { 
+            for _ in 0..8 {
+                out.push_str(&format!("{:06o}  ", ((self.bytes[self.idx+1] as u16) << 8)+(self.bytes[self.idx] as u16)));
+                self.idx += 2;
+            }
+        } else { // last line to be printed
+            while self.idx+1 < self.length {
+                out.push_str(&format!("{:06o}  ", ((self.bytes[self.idx+1] as u16) << 8)+(self.bytes[self.idx] as u16)));
+                self.idx += 2;
+            }
+            if self.idx != self.length { // deal with leftover odd
+                out.push_str(&format!("{:06o}  ", self.bytes[self.idx]));
+                self.idx += 1;
+            }
+        }
+        Some(out)
+    }
+}
+
+
 pub struct OneByteOctal<'a> {
     idx: usize,
     length: usize,
