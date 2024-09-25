@@ -207,7 +207,7 @@ impl<'a> Iterator for OneByteChar<'a> {
         }
         let mut out: String = format!("{:07x}   ", self.idx);
         for _ in 0..min(16, self.length-self.idx) {
-            out.push_str(&format!("{}   ", self.bytes[self.idx] as char));
+            out.push_str(&format!("{:<3} ", self.bytes[self.idx] as char));
             self.idx += 1;
         }
         Some(out)

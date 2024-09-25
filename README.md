@@ -17,6 +17,20 @@ Only a primitive set of options from `hexdump` are are provided, in particular:
     hexadecimal, followed by eight space-separated, five-column,
     zero-filled, two-byte units of input data, in unsigned
     decimal, per line.
+-o, --two-bytes-octal
+    Two-byte octal display. Display the input offset in
+    hexadecimal, followed by eight space-separated, six-column,
+    zero-filled, two-byte quantities of input data, in octal, per
+    line.
+-b, --one-byte-octal
+    One-byte octal display. Display the input offset in
+    hexadecimal, followed by sixteen space-separated,
+    three-column, zero-filled bytes of input data, in octal, per
+    line.
+-c, --one-byte-char
+    One-byte character display. Display the input offset in
+    hexadecimal, followed by sixteen space-separated,
+    three-column, space-filled characters of input data per line.
 ```
 
 Example Usage:
