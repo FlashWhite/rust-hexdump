@@ -19,15 +19,19 @@ pub struct Args {
 fn main() {
     let args = Args::parse();
     if let Ok(bytes) = fs::read(args.file.clone()) {
-        // DETERMINE LENGTH
+        // Determine Length
         let length: usize;
         if let Some(n) = args.length {
             length = min(n, bytes.len());
         } else {
             length = bytes.len();
         }
+        // Return immediately if the file is empty
+        if length == 0 {
+            return
+        }
 
-        // PRINT WORK
+        // Printing Work
         // let mut idx: usize = 0;
         let mut two_byte_hexadecimal = TwoByteHexadecimal::new(length, &bytes);
         loop {
@@ -83,10 +87,29 @@ impl<'a> Iterator for TwoByteHexadecimal<'a> {
     }
 }
 
-// How to deal with multi arg printing? Ex: 
-// ➜ hexdump -n 32 -b -c html.txt
-// 0000000 131 157 165 040 143 141 156 047 164 040 160 141 162 163 145 040
-// 0000000   Y   o   u       c   a   n   '   t       p   a   r   s   e
-// 0000010 133 130 135 110 124 115 114 040 167 151 164 150 040 162 145 147
-// 0000010   [   X   ]   H   T   M   L       w   i   t   h       r   e   g
-// 0000020
+// TODO: Add tests for each struct
+
+#[cfg(test)]
+mod tests {
+    use crate::TwoByteHexadecimal;
+    #[test]
+    fn test_two_byte_hexadecimal() {
+        let bytes: Vec<u8> = "orange juice and banana peel! apple juice and lemon rind!".as_bytes().to_vec();
+        // Multiple Lines, Odd Last Line
+        let mut mult_iterator = TwoByteHexadecimal::new(bytes.len(), &bytes);
+        assert_eq!(mult_iterator.next().unwrap(), "0000000 726f 6e61 6567 6a20 6975 6563 6120 646e ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000010 6220 6e61 6e61 2061 6570 6c65 2021 7061 ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000020 6c70 2065 756a 6369 2065 6e61 2064 656c ".to_string());
+        assert_eq!(mult_iterator.next().unwrap(), "0000030 6f6d 206e 6972 646e 0021".to_string());
+        assert_eq!(mult_iterator.next(), None);
+        // Full Last Line
+        let mut full_iterator = TwoByteHexadecimal::new(16, &bytes);
+        assert_eq!(full_iterator.next().unwrap(), "0000000 726f 6e61 6567 6a20 6975 6563 6120 646e ".to_string());
+        assert_eq!(full_iterator.next(), None);
+        // Even Last Line
+        let mut even_iterator = TwoByteHexadecimal::new(30, &bytes);
+        assert_eq!(even_iterator.next().unwrap(), "0000000 726f 6e61 6567 6a20 6975 6563 6120 646e ".to_string());
+        assert_eq!(even_iterator.next().unwrap(), "0000010 6220 6e61 6e61 2061 6570 6c65 2021 ".to_string());
+        assert_eq!(even_iterator.next(), None);
+    }
+}
